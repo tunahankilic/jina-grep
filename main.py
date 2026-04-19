@@ -1,4 +1,5 @@
 import io
+import os
 import sys
 import warnings
 
@@ -82,8 +83,9 @@ def run_agent(llm: ChatOllama, skill: Skill, query: str) -> str:
 
 def main() -> None:
     registry = SkillRegistry("skills")
-    router = ChatOllama(model="lfm2.5-thinking:1.2b")
-    llm = ChatOllama(model="gemma4:e4b-nvfp4")
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    router = ChatOllama(model="lfm2.5-thinking:1.2b", base_url=ollama_url)
+    llm = ChatOllama(model="gemma4:e4b-nvfp4", base_url=ollama_url)
 
     console.print("\n[bold]Dynamic Skill Agent[/bold] [dim](Ctrl+C to exit)[/dim]\n")
 

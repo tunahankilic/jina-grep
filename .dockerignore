@@ -1,0 +1,8 @@
+.venv/
+.git/
+.claude/
+__pycache__/
+*.py[oc]
+*.ipynb
+assets/
+jina-grep-cli/
