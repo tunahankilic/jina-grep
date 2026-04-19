@@ -1,9 +1,14 @@
+import warnings
+
 from langchain.agents import create_agent
 from langchain_community.tools import ShellTool
 from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
 
 from skill_registry import Skill, SkillRegistry
+
+
+warnings.filterwarnings("ignore", category=UserWarning, module="langchain_community.tools.shell")
 
 
 def route_skill(llm: ChatOllama, skills: list[Skill], query: str) -> str:
