@@ -42,6 +42,9 @@ jina-grep/
 ├── data/                   # files the agent is allowed to query
 ├── skill_registry.py       # loads and indexes skill files
 ├── main.py                 # router + agent loop
+├── Dockerfile              # container image definition
+├── .dockerignore
+├── Makefile                # build and run shortcuts
 └── pyproject.toml
 ```
 
@@ -73,6 +76,7 @@ You are a search agent ...
   ollama pull lfm2.5-thinking:1.2b   # router model
   ```
 - [uv](https://docs.astral.sh/uv/) for dependency management
+- [Docker](https://www.docker.com) for sandboxed execution
 
 ## Installation
 
@@ -84,8 +88,25 @@ uv sync
 
 ## Usage
 
+### Local
+
 ```bash
 uv run main.py
+```
+
+### Docker (recommended)
+
+Runs the agent in an isolated container with a read-only filesystem, dropped capabilities, and `data/` mounted as read-only:
+
+```bash
+make build   # build the image
+make run     # start the container
+```
+
+The container connects to Ollama on the host via `OLLAMA_BASE_URL=http://host.docker.internal:11434`. To override:
+
+```bash
+OLLAMA_BASE_URL=http://your-host:11434 make run
 ```
 
 The terminal shows routing and each execution step live:
@@ -115,6 +136,16 @@ To use different models, update the `router` and `llm` parameters in `main.py`:
 router = ChatOllama(model="your-router-model")
 llm = ChatOllama(model="your-agent-model")
 ```
+
+### Security flags
+
+| Flag | Effect |
+|---|---|
+| `--read-only` | Container filesystem is read-only |
+| `--tmpfs /tmp`, `--tmpfs /home/agent/.cache` | Writable in-memory mounts for temp files and uv cache |
+| `--cap-drop ALL` | All Linux capabilities dropped |
+| `--security-opt no-new-privileges` | Prevents privilege escalation |
+| `-v data:/app/data:ro` | `data/` mounted read-only |
 
 ## Dependencies
 
