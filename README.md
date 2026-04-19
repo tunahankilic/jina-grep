@@ -23,15 +23,15 @@ User Query
                                    │  + ShellTool    │
                                    └────────┬────────┘
                                             │
-                              Thought → Action → Observation
+                                 Step 1 → Step 2 → …
                                             │
                                             ▼
                                         Answer
 ```
 
-1. **Router** — a lightweight LLM call selects the best skill based on the skill descriptions and the user's query
+1. **Router** — a lightweight LLM call selects the best skill based on skill descriptions and the user's query. Uses a separate, smaller model for speed.
 2. **SkillRegistry** — loads all `skills/*.md` files at startup, parsing frontmatter (`name`, `description`) and body (system prompt)
-3. **Agent** — `create_agent()` receives the selected skill's content as `system_prompt` and `ShellTool` for executing shell commands in the `data/` directory
+3. **Agent** — `create_agent()` receives the selected skill's content as `system_prompt` and `ShellTool` for executing shell commands in the `data/` directory. Each step is printed live as it executes.
 
 ## Project Structure
 
@@ -57,9 +57,9 @@ description: Exact search within the filesystem. Use for known filenames, exact 
 You are a search agent ...
 ```
 
-| Field         | Purpose                                                     |
-|---------------|-------------------------------------------------------------|
-| `name`        | Unique identifier used for routing and lookup               |
+| Field         | Purpose                                                      |
+|---------------|--------------------------------------------------------------|
+| `name`        | Unique identifier used for routing and lookup                |
 | `description` | One-line summary shown to the router LLM for skill selection |
 | Body          | Full system prompt injected into the agent at runtime        |
 
@@ -67,9 +67,10 @@ You are a search agent ...
 
 ## Prerequisites
 
-- [Ollama](https://ollama.com) running locally with your model pulled:
+- [Ollama](https://ollama.com) running locally with your models pulled:
   ```bash
-  ollama pull gemma4:e4b-nvfp4
+  ollama pull gemma4:e4b-nvfp4       # agent model
+  ollama pull lfm2.5-thinking:1.2b   # router model
   ```
 - [uv](https://docs.astral.sh/uv/) for dependency management
 
@@ -87,19 +88,32 @@ uv sync
 uv run main.py
 ```
 
+The terminal shows routing and each execution step live:
+
 ```
-Dynamic Skill Agent (Ctrl+C to exit)
+Dynamic Skill Agent  (Ctrl+C to exit)
 
 Query: What are the key hyperparameters for XGBoost?
-[Skill: fs-search]
-Executing command: find data/ -type f -name "*.md"
-...
+
+  → fs-search
+
+  Step 1  find data/ -type f -name "*.md"
+          data/Grandmaster Pro Tip...md
+          data/XGBoost_Tips_and_Tricks.md
+
+  Step 2  find data/ -type f -name "XGBoost_Tips_and_Tricks.md" -exec cat {} \;
+          ...
+          328 more lines
+
+──────────────────────────────────────────────────────
+The key hyperparameters for XGBoost are: objective, eval_metric, ...
 ```
 
-To change the model, update the `model` parameter in `main.py`:
+To use different models, update the `router` and `llm` parameters in `main.py`:
 
 ```python
-llm = ChatOllama(model="your-model-name")
+router = ChatOllama(model="your-router-model")
+llm = ChatOllama(model="your-agent-model")
 ```
 
 ## Dependencies
@@ -110,3 +124,4 @@ llm = ChatOllama(model="your-model-name")
 | `langchain-community`    | ≥ 0.4.1   |
 | `langchain-ollama`       | ≥ 1.1.0   |
 | `langchain-experimental` | ≥ 0.4.1   |
+| `rich`                   | ≥ 15.0.0  |
